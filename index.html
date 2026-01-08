@@ -42,16 +42,13 @@
         <div id="lobby" class="w-full glass p-8 space-y-6 animate__animated animate__zoomIn">
             <div class="space-y-4">
                 <input type="text" id="nick" placeholder="Seu apelido..." maxlength="12" class="w-full bg-white/5 p-4 rounded-2xl outline-none border border-white/10 text-center focus:border-pink-500 transition-all font-semibold">
-                <input type="text" id="peerIdInput" placeholder="ID do Amigo (para entrar)" class="w-full bg-white/5 p-4 rounded-2xl outline-none border border-white/10 text-center focus:border-sky-500 transition-all">
+                <input type="text" id="roomName" placeholder="Nome da Sala (ex: amor)" class="w-full bg-white/5 p-4 rounded-2xl outline-none border border-white/10 text-center focus:border-sky-500 transition-all">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="initPeer(true)" class="btn-grad bg-gradient-to-r from-sky-600 to-indigo-600 py-4 rounded-2xl font-bold text-white shadow-lg text-sm">Criar Sala</button>
                 <button onclick="initPeer(false)" class="btn-grad bg-gradient-to-r from-pink-600 to-purple-600 py-4 rounded-2xl font-bold text-white shadow-lg text-sm">Entrar</button>
             </div>
-            <div id="idDisplay" class="hidden text-center p-4 bg-white/5 rounded-2xl">
-                <p class="text-[9px] opacity-50 uppercase mb-1">Seu ID para enviar:</p>
-                <p id="myIdText" class="text-sky-400 font-bold tracking-widest cursor-pointer" onclick="copyId()"></p>
-            </div>
+            <p id="lobbyStatus" class="text-[10px] text-center opacity-40 font-bold uppercase tracking-widest"></p>
         </div>
         <div id="game" class="hidden w-full space-y-4 animate__animated animate__fadeIn">
             <div class="glass p-4 flex justify-around items-center relative overflow-hidden">
@@ -97,34 +94,37 @@
             d.className = `glass shadow-2xl border-2 ${isP2 ? 'text-pink-500 border-pink-500/50' : 'text-sky-400 border-sky-400/50'}`;
             d.innerText = m; document.body.appendChild(d); setTimeout(() => d.remove(), 3000);
         }
-        function copyId() {
-            navigator.clipboard.writeText(document.getElementById('myIdText').innerText);
-            show("ID Copiado! 💡", false);
-        }
         window.initPeer = (isHost) => {
+            const roomName = document.getElementById('roomName').value.trim().toLowerCase();
             myNick = document.getElementById('nick').value.trim() || (isHost ? "Host" : "Convidado");
-            peer = new Peer();
-            peer.on('open', (id) => {
-                if(isHost) {
-                    mySym = 'O';
-                    document.getElementById('idDisplay').classList.remove('hidden');
-                    document.getElementById('myIdText').innerText = id;
-                    document.getElementById('status').innerText = "Aguardando amigo...";
-                } else {
-                    mySym = 'X';
-                    const targetId = document.getElementById('peerIdInput').value.trim();
-                    if(!targetId) return alert("Digite o ID do amigo!");
-                    connectToPeer(targetId);
-                }
-            });
+            if(!roomName) return alert("Digite um nome para a sala!");
+            document.getElementById('lobbyStatus').innerText = "Conectando ao servidor...";
+            if(isHost) {
+                mySym = 'O';
+                peer = new Peer('ttl-' + roomName);
+                peer.on('open', () => {
+                    document.getElementById('lobbyStatus').innerText = "Sala aberta! Aguardando amigo...";
+                });
+                peer.on('error', (err) => {
+                    if(err.type === 'unavailable-id') alert("Esse nome de sala já está em uso! Escolha outro.");
+                    document.getElementById('lobbyStatus').innerText = "";
+                });
+            } else {
+                mySym = 'X';
+                peer = new Peer();
+                peer.on('open', () => {
+                    connectToPeer('ttl-' + roomName);
+                });
+            }
             peer.on('connection', (c) => {
                 conn = c;
                 setupConn();
             });
         };
-        function connectToPeer(id) {
-            conn = peer.connect(id);
+        function connectToPeer(targetId) {
+            conn = peer.connect(targetId);
             setupConn();
+            conn.on('error', () => alert("Erro ao conectar na sala. Verifique o nome."));
         }
         function setupConn() {
             conn.on('open', () => {
@@ -172,7 +172,7 @@
         function updateUI() {
             board.forEach((v, i) => {
                 const c = document.querySelector(`[data-i="${i}"]`);
-                c.className = `cell ${v.toLowerCase()}`;
+                if(c) c.className = `cell ${v.toLowerCase()}`;
             });
             document.getElementById('turnIndicator').style.background = turn === 'O' ? 'var(--p1)' : 'var(--p2)';
             document.getElementById('board').className = `grid grid-cols-3 gap-3 p-3 glass transition-all duration-500 ${turn === 'O' ? 'turn-o' : 'turn-x'}`;
@@ -214,9 +214,9 @@
         const box = document.getElementById('msgs');
         quick.forEach(m => {
             const b = document.createElement('button'); b.className = "p-3 bg-white/5 rounded-xl text-[9px] font-bold uppercase border border-white/5"; b.innerText = m; 
-            b.onclick = () => { conn.send({ type: 'msg', text: m, sym: mySym }); show(m, mySym === 'X'); openChat(); }; box.appendChild(b);
+            b.onclick = () => { if(conn) { conn.send({ type: 'msg', text: m, sym: mySym }); show(m, mySym === 'X'); openChat(); } }; box.appendChild(b);
         });
-        document.getElementById('cmsg').onkeypress = (e) => { if(e.key === 'Enter' && e.target.value.trim()) { conn.send({ type: 'msg', text: e.target.value, sym: mySym }); show(e.target.value, mySym === 'X'); e.target.value = ""; openChat(); } };
+        document.getElementById('cmsg').onkeypress = (e) => { if(e.key === 'Enter' && e.target.value.trim() && conn) { conn.send({ type: 'msg', text: e.target.value, sym: mySym }); show(e.target.value, mySym === 'X'); e.target.value = ""; openChat(); } };
         const starField = document.getElementById('starField');
         for(let i=0; i<30; i++) {
             const star = document.createElement('div'); star.style.position = 'absolute'; star.style.width = '2px'; star.style.height = '2px'; star.style.background = 'white';
