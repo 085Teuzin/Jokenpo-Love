@@ -1,227 +1,254 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tic-Tac-Love - Made By: @085_Teuzinnn</title>
+    <title>CineSync P2P - Made By: @085_Teuzinnn</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600;800&display=swap');
-        :root { --p1: #00d4ff; --p2: #ff007f; --bg: #020617; --card: rgba(15, 23, 42, 0.7); --txt: #f8fafc; }
-        body { background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); color: var(--txt); font-family: 'Poppins', sans-serif; height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
-        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
-        .glass { background: var(--card); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .cell { aspect-ratio: 1/1; background: rgba(255,255,255,0.03); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; border: 1px solid rgba(255,255,255,0.05); }
-        .cell:hover { background: rgba(255,255,255,0.08); }
-        .cell:active { transform: scale(0.9); }
-        .cell.o::before { content: "💍"; filter: drop-shadow(0 0 15px var(--p1)); animation: pop 0.3s; }
-        .cell.x::before { content: "❤️"; filter: drop-shadow(0 0 15px var(--p2)); animation: pop 0.3s; }
-        @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-        .turn-o { border: 2px solid var(--p1) !important; box-shadow: 0 0 30px rgba(0,212,255,0.2); }
-        .turn-x { border: 2px solid var(--p2) !important; box-shadow: 0 0 30px rgba(255,0,127,0.2); }
-        #toast { position: fixed; top: 12%; left: 50%; transform: translateX(-50%); z-index: 1000; padding: 12px 24px; border-radius: 50px; font-weight: 600; animation: slideDown 3s forwards; pointer-events: none; white-space: nowrap; }
-        @keyframes slideDown { 0% { opacity:0; transform:translate(-50%,-20px); } 15% { opacity:1; transform:translate(-50%,0); } 85% { opacity:1; } 100% { opacity:0; transform:translate(-50%,-20px); } }
-        .btn-grad { background-size: 200% auto; transition: 0.5s; }
-        .btn-grad:hover { background-position: right center; }
-        .win-line { background: rgba(255,255,255,0.1) !important; transform: scale(1.02); border: 2px solid gold !important; }
+        :root { --main: #f97316; --glow: rgba(249, 115, 22, 0.4); }
+        body { background: radial-gradient(circle at top, #0f172a 0%, #05070a 100%); color: #f8fafc; overflow: hidden; height: 100vh; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .theme-border { border: 1px solid var(--main) !important; }
+        .theme-text { color: var(--main) !important; }
+        .theme-bg { background-color: var(--main) !important; }
+        .theme-shadow { box-shadow: 0 0 30px var(--glow); }
+        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        #waitingOverlay { background: rgba(2, 6, 23, 0.95); z-index: 50; display: flex; }
+        #mainVideo, #ytPlayer { width: 100%; height: 100%; border-radius: 1.5rem; position: absolute; top:0; left:0; }
+        .video-wrapper { width: 100%; aspect-ratio: 16/9; position: relative; border-radius: 1.5rem; }
     </style>
 </head>
-<body>
-    <div class="stars" id="starField"></div>
-    <div class="fixed top-5 left-5 right-5 z-50 flex justify-between items-center">
-        <button onclick="openChat()" class="p-4 glass rounded-full hover:scale-110 transition relative">💌<span id="chatDot" class="hidden absolute top-2 right-2 w-3 h-3 bg-pink-500 rounded-full border-2 border-slate-900"></span></button>
-        <button onclick="toggleFS()" class="p-4 glass rounded-full hover:scale-110 transition">📺</button>
-    </div>
-    <header class="text-center mt-16 mb-6 animate__animated animate__fadeInDown flex-shrink-0">
-        <h1 class="text-5xl font-bold" style="font-family: 'Dancing Script';"><span style="color: var(--p1)">Tic-Tac</span><span style="color: var(--p2)">-Love</span></h1>
-    </header>
-    <main class="w-full max-w-[380px] px-6 flex flex-col items-center justify-start flex-1">
-        <div id="lobby" class="w-full glass p-8 space-y-6 animate__animated animate__zoomIn">
-            <div class="space-y-4">
-                <input type="text" id="nick" placeholder="Seu apelido..." maxlength="12" class="w-full bg-white/5 p-4 rounded-2xl outline-none border border-white/10 text-center focus:border-pink-500 transition-all font-semibold">
-                <input type="text" id="roomName" placeholder="Nome da Sala (ex: amor)" class="w-full bg-white/5 p-4 rounded-2xl outline-none border border-white/10 text-center focus:border-sky-500 transition-all">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="initPeer(true)" class="btn-grad bg-gradient-to-r from-sky-600 to-indigo-600 py-4 rounded-2xl font-bold text-white shadow-lg text-sm">Criar Sala</button>
-                <button onclick="initPeer(false)" class="btn-grad bg-gradient-to-r from-pink-600 to-purple-600 py-4 rounded-2xl font-bold text-white shadow-lg text-sm">Entrar</button>
-            </div>
-            <p id="lobbyStatus" class="text-[10px] text-center opacity-40 font-bold uppercase tracking-widest"></p>
+<body class="p-4">
+
+    <div id="lobby-ui" class="w-full max-w-2xl flex flex-col items-center animate__animated animate__fadeIn">
+        <div class="w-full flex justify-end gap-2 mb-2">
+            <button onclick="openSettings()" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg hover:scale-110 transition-all theme-border text-xs">⚙️</button>
+            <button onclick="toggleFullscreen()" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg hover:scale-110 transition-all theme-border text-xs">📺</button>
         </div>
-        <div id="game" class="hidden w-full space-y-4 animate__animated animate__fadeIn">
-            <div class="glass p-4 flex justify-around items-center relative overflow-hidden">
-                <div id="p1Card" class="text-center"><span id="n1" class="block text-[9px] uppercase font-bold opacity-50 italic">...</span><span id="s1" class="text-3xl font-black" style="color:var(--p1)">0</span></div>
-                <div class="flex flex-col items-center"><div class="text-lg font-thin opacity-20">VS</div><div id="turnIndicator" class="w-2 h-2 rounded-full mt-1 animate-pulse"></div></div>
-                <div id="p2Card" class="text-center"><span id="n2" class="block text-[9px] uppercase font-bold opacity-50 italic">...</span><span id="s2" class="text-3xl font-black" style="color:var(--p2)">0</span></div>
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-[900] theme-text uppercase tracking-tighter">CineSync P2P</h1>
+            <h2 class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Streaming Real-Time + P2P</h2>
+        </div>
+        <div id="lobby-box" class="w-full glass-panel p-6 rounded-[2rem] theme-shadow space-y-4">
+            <div class="space-y-3">
+                <input type="text" id="nick" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="👤 Seu apelido">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="room" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="🆔️ Sala">
+                    <input type="password" id="pass" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="🔑 Senha">
+                </div>
+                <input type="text" id="yt-link" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="🔗 Link do YouTube (Opcional)">
             </div>
-            <div id="board" class="grid grid-cols-3 gap-3 p-3 glass transition-all duration-500">
-                <div class="cell" onclick="hit(0)" data-i="0"></div>
-                <div class="cell" onclick="hit(1)" data-i="1"></div>
-                <div class="cell" onclick="hit(2)" data-i="2"></div>
-                <div class="cell" onclick="hit(3)" data-i="3"></div>
-                <div class="cell" onclick="hit(4)" data-i="4"></div>
-                <div class="cell" onclick="hit(5)" data-i="5"></div>
-                <div class="cell" onclick="hit(6)" data-i="6"></div>
-                <div class="cell" onclick="hit(7)" data-i="7"></div>
-                <div class="cell" onclick="hit(8)" data-i="8"></div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="start(true)" class="theme-bg text-white font-black py-4 rounded-xl active:scale-95 transition-all text-xs uppercase tracking-widest">Criar Sala</button>
+                <button onclick="start(false)" class="bg-transparent theme-text font-black py-4 rounded-xl active:scale-95 transition-all theme-border text-xs uppercase tracking-widest">Entrar</button>
             </div>
-            <button id="rematch" onclick="requestReset()" class="hidden w-full bg-white text-black py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl animate__animated animate__bounceIn">Revanche</button>
-            <div id="status" class="text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/40"></div>
+            <p id="statusMsg" class="text-center text-[10px] text-gray-500 uppercase font-bold tracking-widest"></p>
         </div>
         <footer class="text-center mt-5 text-gray-500 text-sm">
             Made By: <a href="https://instagram.com/085_Teuzinnn" target="_blank" class="text-blue-400 hover:text-blue-300 font-semibold transition duration-200">@085_Teuzinnn</a>
         </footer>
+    </div>
+
+    <main id="player-ui" class="hidden w-full max-w-5xl flex flex-col animate__animated animate__zoomIn">
+        <div id="host-header" class="w-full flex justify-between items-center mb-4 px-2">
+            <h1 class="text-xl font-black theme-text uppercase italic">CineSync</h1>
+            <div class="flex items-center gap-2">
+                <button id="btn-share" onclick="startScreenShare()" class="hidden px-3 py-1 bg-indigo-600 rounded-full text-[9px] font-black uppercase tracking-tighter">📺 Transmitir Tela</button>
+                <button onclick="openSettings()" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg theme-border text-[10px]">⚙️</button>
+                <div class="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/10">
+                    <div id="sync-indicator" class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span id="role-text" class="text-[9px] font-black uppercase tracking-widest">Sincronizado</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-wrapper glass-panel theme-shadow bg-black border border-white/5">
+            <div id="waitingOverlay" class="absolute inset-0 items-center justify-center flex-col gap-4 text-center p-6 rounded-[1.5rem]">
+                <div class="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+                <p class="font-black text-white uppercase tracking-widest text-[10px]">Preparando Transmissão</p>
+                <div class="flex gap-2">
+                    <button onclick="$('#fileInput').click()" class="px-4 py-2 theme-bg rounded-xl text-[9px] font-black uppercase hover:scale-105 transition-all">Arquivo Local</button>
+                    <button id="btn-load-yt" onclick="loadYTFromInput()" class="px-4 py-2 bg-red-600 rounded-xl text-[9px] font-black uppercase hover:scale-105 transition-all hidden">Usar Link YT</button>
+                </div>
+            </div>
+            <video id="mainVideo" controls class="hidden"></video>
+            <div id="ytPlayer" class="hidden"></div>
+        </div>
+        <input type="file" id="fileInput" accept="video/*" class="hidden">
     </main>
-    <div id="chat" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden z-[100] items-center justify-center p-6" onclick="openChat()">
-        <div class="glass p-6 w-full max-w-sm border-white/20 animate__animated animate__slideInUp" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4"><h3 class="font-bold uppercase text-[10px] tracking-widest opacity-50">Mensagens</h3><button onclick="openChat()" class="text-white/20 hover:text-white">✕</button></div>
-            <div id="msgs" class="grid grid-cols-2 gap-2 mb-6"></div>
-            <input type="text" id="cmsg" placeholder="Sua mensagem..." class="w-full bg-white/5 p-4 rounded-2xl border border-white/10 outline-none focus:border-pink-500 transition text-sm">
+
+    <div id="modal" class="fixed inset-0 bg-black/95 hidden z-50 flex items-center justify-center p-6 animate__animated animate__fadeIn">
+        <div class="glass-panel w-full max-w-xs rounded-[2rem] p-6 space-y-5 theme-border">
+            <h3 class="font-black text-center theme-text tracking-widest text-[11px] uppercase">Configurações</h3>
+            <div class="grid grid-cols-5 gap-3 justify-items-center">
+                <button onclick="setTheme('#f97316')" class="w-9 h-9 rounded-xl bg-orange-500"></button>
+                <button onclick="setTheme('#22c55e')" class="w-9 h-9 rounded-xl bg-green-500"></button>
+                <button onclick="setTheme('#3b82f6')" class="w-9 h-9 rounded-xl bg-blue-500"></button>
+                <button onclick="setTheme('#ef4444')" class="w-9 h-9 rounded-xl bg-red-500"></button>
+                <button onclick="setTheme('#a855f7')" class="w-9 h-9 rounded-xl bg-purple-500"></button>
+            </div>
+            <button onclick="clearAllData()" class="w-full py-3 bg-red-900/10 text-red-500 border border-red-900/30 rounded-xl font-bold text-[9px] uppercase">Apagar Dados</button>
+            <button onclick="closeSettings()" class="w-full py-3 bg-white/5 rounded-xl text-[9px] font-black uppercase">Voltar</button>
         </div>
     </div>
+
     <script>
-        let peer, conn, mySym, oppNick, myNick;
-        let board = Array(9).fill("");
-        let turn = 'O';
-        let active = false;
-        let scores = { O: 0, X: 0 };
-        const quick = ["Beijo! 💋", "Boa! 👏", "Bora Gzr! 😈", "Eita! 😲", "Facil 😜", "Ganhei! 🏆", "Gostosa(o)! 🫦", "Hahaha! 😂", "Hehehe! 😏", "Hihihi! 😁", "Linda(o)! 😍", "Mais uma ? 🎮", "Sortudo(a)! ✨", "Sua vez! 🥰", "Te amo! ❤️", "Vixi! 🤨"];
-        window.toggleFS = () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
-        function show(m, isP2) {
-            const d = document.createElement('div'); d.id = "toast";
-            d.className = `glass shadow-2xl border-2 ${isP2 ? 'text-pink-500 border-pink-500/50' : 'text-sky-400 border-sky-400/50'}`;
-            d.innerText = m; document.body.appendChild(d); setTimeout(() => d.remove(), 3000);
-        }
-        window.initPeer = (isHost) => {
-            const roomName = document.getElementById('roomName').value.trim().toLowerCase();
-            myNick = document.getElementById('nick').value.trim() || (isHost ? "Host" : "Convidado");
-            if(!roomName) return alert("Digite um nome para a sala!");
-            document.getElementById('lobbyStatus').innerText = "Conectando ao servidor...";
-            if(isHost) {
-                mySym = 'O';
-                peer = new Peer('ttl-' + roomName);
-                peer.on('open', () => {
-                    document.getElementById('lobbyStatus').innerText = "Sala aberta! Aguardando amigo...";
-                });
-                peer.on('error', (err) => {
-                    if(err.type === 'unavailable-id') alert("Esse nome de sala já está em uso! Escolha outro.");
-                    document.getElementById('lobbyStatus').innerText = "";
-                });
-            } else {
-                mySym = 'X';
-                peer = new Peer();
-                peer.on('open', () => {
-                    connectToPeer('ttl-' + roomName);
-                });
-            }
-            peer.on('connection', (c) => {
-                conn = c;
-                setupConn();
-            });
+        const $ = document.querySelector.bind(document);
+        let peer = null, conn = null, isHost = false, hostReady = false, guestReady = false, roomKey = "";
+        let ytPlayer = null, currentMode = 'local', screenStream = null;
+        const video = $('#mainVideo');
+
+        window.onload = () => {
+            $('#nick').value = localStorage.getItem('cs_nick') || '';
+            $('#room').value = localStorage.getItem('cs_room') || '';
+            $('#pass').value = localStorage.getItem('cs_pass') || '';
+            if(localStorage.getItem('cs_color')) setTheme(localStorage.getItem('cs_color'));
         };
-        function connectToPeer(targetId) {
-            conn = peer.connect(targetId);
-            setupConn();
-            conn.on('error', () => alert("Erro ao conectar na sala. Verifique o nome."));
+
+        function start(hostMode) {
+            const nick = $('#nick').value.trim();
+            const r = $('#room').value.trim().toLowerCase().replace(/\s+/g, '-');
+            roomKey = $('#pass').value.trim();
+            if (!nick || !r || !roomKey) return alert("Preencha todos os campos!");
+            
+            localStorage.setItem('cs_nick', nick);
+            localStorage.setItem('cs_room', r);
+            localStorage.setItem('cs_pass', roomKey);
+            
+            isHost = hostMode;
+            peer = new Peer(isHost ? `cs-vid-${r}` : undefined);
+            
+            peer.on('open', () => {
+                $('#statusMsg').innerText = isHost ? "Aguardando amigo..." : "Conectando...";
+                if (!isHost) connectToHost(`cs-vid-${r}`);
+            });
+            peer.on('connection', setupConn);
+            
+            peer.on('call', (call) => {
+                call.answer();
+                call.on('stream', (remoteStream) => {
+                    currentMode = 'stream';
+                    $('#waitingOverlay').style.display = 'none';
+                    $('#ytPlayer').classList.add('hidden');
+                    $('#mainVideo').classList.remove('hidden');
+                    video.srcObject = remoteStream;
+                    video.play();
+                });
+            });
         }
-        function setupConn() {
+
+        function connectToHost(id) { setupConn(peer.connect(id)); }
+
+        function setupConn(c) {
+            conn = c;
             conn.on('open', () => {
-                document.getElementById('lobby').classList.add('hidden');
-                document.getElementById('game').classList.remove('hidden');
-                conn.send({ type: 'init', nick: myNick });
-            });
-            conn.on('data', (data) => {
-                if(data.type === 'init') {
-                    oppNick = data.nick;
-                    document.getElementById('n1').innerText = mySym === 'O' ? myNick : oppNick;
-                    document.getElementById('n2').innerText = mySym === 'X' ? myNick : oppNick;
-                    document.getElementById('lobby').classList.add('hidden');
-                    document.getElementById('game').classList.remove('hidden');
-                    active = true;
-                    updateUI();
-                }
-                if(data.type === 'move') {
-                    board = data.board;
-                    turn = data.turn;
-                    checkWin();
-                    updateUI();
-                }
-                if(data.type === 'reset') {
-                    board = Array(9).fill("");
-                    turn = 'O';
-                    active = true;
-                    document.querySelectorAll('.cell').forEach(c => c.classList.remove('win-line'));
-                    updateUI();
-                }
-                if(data.type === 'msg') {
-                    show(data.text, data.sym === 'X');
-                    if(!document.getElementById('chat').classList.contains('flex')) document.getElementById('chatDot').classList.remove('hidden');
-                }
+                conn.send({ type: 'AUTH', val: CryptoJS.AES.encrypt('valid', roomKey).toString() });
+                conn.on('data', (data) => {
+                    if (data.type === 'AUTH') {
+                        try {
+                            const dec = CryptoJS.AES.decrypt(data.val, roomKey).toString(CryptoJS.enc.Utf8);
+                            if (dec !== 'valid') throw new Error();
+                            $('#lobby-ui').classList.add('hidden');
+                            $('#player-ui').classList.replace('hidden', 'flex');
+                            if (isHost) $('#btn-share').classList.remove('hidden');
+                            if ($('#yt-link').value) $('#btn-load-yt').classList.remove('hidden');
+                        } catch(e) { alert("Senha incorreta!"); location.reload(); }
+                    }
+                    if (data.type === 'YT_LOAD') initYouTube(data.id);
+                    handleSync(data);
+                });
             });
         }
-        function hit(i) {
-            if(!active || board[i] !== "" || turn !== mySym) return;
-            board[i] = mySym;
-            turn = mySym === 'O' ? 'X' : 'O';
-            conn.send({ type: 'move', board, turn });
-            checkWin();
-            updateUI();
+
+        async function startScreenShare() {
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                currentMode = 'stream';
+                $('#waitingOverlay').style.display = 'none';
+                $('#ytPlayer').classList.add('hidden');
+                $('#mainVideo').classList.remove('hidden');
+                video.srcObject = screenStream;
+                video.play();
+                peer.call(conn.peer, screenStream);
+            } catch (err) { console.error(err); }
         }
-        function updateUI() {
-            board.forEach((v, i) => {
-                const c = document.querySelector(`[data-i="${i}"]`);
-                if(c) c.className = `cell ${v.toLowerCase()}`;
+
+        function initYouTube(vidId) {
+            currentMode = 'youtube';
+            $('#mainVideo').classList.add('hidden');
+            $('#ytPlayer').classList.remove('hidden');
+            ytPlayer = new YT.Player('ytPlayer', {
+                videoId: vidId,
+                playerVars: { 'autoplay': 0, 'controls': isHost ? 1 : 0, 'disablekb': isHost ? 0 : 1 },
+                events: { 'onReady': () => { if (isHost) hostReady = true; else guestReady = true; conn.send({type:'READY', val:true}); checkBothReady(); }}
             });
-            document.getElementById('turnIndicator').style.background = turn === 'O' ? 'var(--p1)' : 'var(--p2)';
-            document.getElementById('board').className = `grid grid-cols-3 gap-3 p-3 glass transition-all duration-500 ${turn === 'O' ? 'turn-o' : 'turn-x'}`;
-            document.getElementById('status').innerText = turn === mySym ? "Sua vez!" : "Vez dele(a)";
-            document.getElementById('s1').innerText = scores.O;
-            document.getElementById('s2').innerText = scores.X;
         }
-        function checkWin() {
-            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-            for(let l of wins) {
-                if(board[l[0]] && board[l[0]] === board[l[1]] && board[l[0]] === board[l[2]]) {
-                    l.forEach(idx => document.querySelector(`[data-i="${idx}"]`).classList.add('win-line'));
-                    finish(board[l[0]]);
-                    return;
-                }
-            }
-            if(!board.includes("")) finish('d');
-        }
-        function finish(r) {
-            active = false;
-            document.getElementById('rematch').classList.remove('hidden');
-            if(r === 'd') document.getElementById('status').innerText = "Empate!";
-            else {
-                scores[r]++;
-                document.getElementById('status').innerText = r === mySym ? "Venceu! ✨" : "Perdeu... 💔";
-                if(r === mySym) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: [r === 'O' ? '#00d4ff' : '#ff007f'] });
+
+        function loadYTFromInput() {
+            const url = $('#yt-link').value;
+            const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+            if (id) {
+                initYouTube(id);
+                conn.send({ type: 'YT_LOAD', id: id });
             }
         }
-        function requestReset() {
-            board = Array(9).fill("");
-            turn = 'O';
-            active = true;
-            document.querySelectorAll('.cell').forEach(c => c.classList.remove('win-line'));
-            document.getElementById('rematch').classList.add('hidden');
-            conn.send({ type: 'reset' });
-            updateUI();
+
+        function handleSync(data) {
+            if (currentMode === 'stream') return;
+            if (data.type === 'READY') { if (isHost) guestReady = data.val; else hostReady = data.val; checkBothReady(); }
+            if (data.type === 'SYNC') {
+                const curTime = currentMode === 'youtube' ? ytPlayer.getCurrentTime() : video.currentTime;
+                const diff = data.time - curTime;
+                if (currentMode === 'youtube') {
+                    if (data.paused) ytPlayer.pauseVideo(); else ytPlayer.playVideo();
+                    if (Math.abs(diff) > 2) ytPlayer.seekTo(data.time);
+                } else {
+                    if (data.paused && !video.paused) video.pause();
+                    if (!data.paused && video.paused) video.play();
+                    if (Math.abs(diff) > 3) video.currentTime = data.time;
+                    else if (diff > 0.1) video.playbackRate = 2.0;
+                    else if (diff < -0.1) video.playbackRate = 0.5;
+                    else video.playbackRate = 1.0;
+                }
+                $('#sync-indicator').className = Math.abs(diff) > 0.5 ? "w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" : "w-2.5 h-2.5 rounded-full bg-green-500";
+            }
         }
-        window.openChat = () => { const m = document.getElementById('chat'); m.classList.toggle('hidden'); m.classList.toggle('flex'); document.getElementById('chatDot').classList.add('hidden'); };
-        const box = document.getElementById('msgs');
-        quick.forEach(m => {
-            const b = document.createElement('button'); b.className = "p-3 bg-white/5 rounded-xl text-[9px] font-bold uppercase border border-white/5"; b.innerText = m; 
-            b.onclick = () => { if(conn) { conn.send({ type: 'msg', text: m, sym: mySym }); show(m, mySym === 'X'); openChat(); } }; box.appendChild(b);
-        });
-        document.getElementById('cmsg').onkeypress = (e) => { if(e.key === 'Enter' && e.target.value.trim() && conn) { conn.send({ type: 'msg', text: e.target.value, sym: mySym }); show(e.target.value, mySym === 'X'); e.target.value = ""; openChat(); } };
-        const starField = document.getElementById('starField');
-        for(let i=0; i<30; i++) {
-            const star = document.createElement('div'); star.style.position = 'absolute'; star.style.width = '2px'; star.style.height = '2px'; star.style.background = 'white';
-            star.style.left = Math.random() * 100 + '%'; star.style.top = Math.random() * 100 + '%'; star.style.opacity = Math.random(); star.style.borderRadius = '50%'; starField.appendChild(star);
+
+        function checkBothReady() { if (hostReady && guestReady) $('#waitingOverlay').style.display = 'none'; }
+
+        $('#fileInput').onchange = (e) => {
+            currentMode = 'local';
+            video.srcObject = null;
+            $('#ytPlayer').classList.add('hidden');
+            $('#mainVideo').classList.remove('hidden');
+            video.src = URL.createObjectURL(e.target.files[0]);
+            if (isHost) hostReady = true; else guestReady = true;
+            conn.send({ type: 'READY', val: true });
+            checkBothReady();
+        };
+
+        setInterval(() => {
+            if (conn && conn.open && hostReady && guestReady && currentMode !== 'stream') {
+                const t = currentMode === 'youtube' ? ytPlayer.getCurrentTime() : video.currentTime;
+                const p = currentMode === 'youtube' ? (ytPlayer.getPlayerState() !== 1) : video.paused;
+                conn.send({ type: 'SYNC', time: t, paused: p });
+            }
+        }, 200);
+
+        function setTheme(c) {
+            document.documentElement.style.setProperty('--main', c);
+            document.documentElement.style.setProperty('--glow', c + '66');
+            localStorage.setItem('cs_color', c);
         }
+        function openSettings() { $('#modal').classList.remove('hidden'); }
+        function closeSettings() { $('#modal').classList.add('hidden'); }
+        function clearAllData() { localStorage.clear(); location.reload(); }
+        function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
     </script>
 </body>
 </html>
