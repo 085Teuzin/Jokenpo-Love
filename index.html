@@ -3,252 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CineSync P2P - Made By: @085_Teuzinnn</title>
+    <title>CineStream P2P - Live Streaming</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="https://www.youtube.com/iframe_api"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --main: #f97316; --glow: rgba(249, 115, 22, 0.4); }
-        body { background: radial-gradient(circle at top, #0f172a 0%, #05070a 100%); color: #f8fafc; overflow: hidden; height: 100vh; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; }
+        :root { --main: #06b6d4; --glow: rgba(6, 182, 212, 0.4); }
+        body { background: #020617; color: #f8fafc; overflow: hidden; height: 100vh; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; }
         .theme-border { border: 1px solid var(--main) !important; }
         .theme-text { color: var(--main) !important; }
         .theme-bg { background-color: var(--main) !important; }
-        .theme-shadow { box-shadow: 0 0 30px var(--glow); }
-        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
-        #waitingOverlay { background: rgba(2, 6, 23, 0.95); z-index: 50; display: flex; }
-        #mainVideo, #ytPlayer { width: 100%; height: 100%; border-radius: 1.5rem; position: absolute; top:0; left:0; }
-        .video-wrapper { width: 100%; aspect-ratio: 16/9; position: relative; border-radius: 1.5rem; }
+        .theme-shadow { box-shadow: 0 0 20px var(--glow); }
+        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        video { width: 100%; height: 100%; border-radius: 1rem; object-fit: contain; background: #000; }
+        .video-container { width: 100%; aspect-ratio: 16/9; position: relative; border-radius: 1rem; overflow: hidden; }
     </style>
 </head>
 <body class="p-4">
 
-    <div id="lobby-ui" class="w-full max-w-2xl flex flex-col items-center animate__animated animate__fadeIn">
-        <div class="w-full flex justify-end gap-2 mb-2">
-            <button onclick="openSettings()" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg hover:scale-110 transition-all theme-border text-xs">⚙️</button>
-            <button onclick="toggleFullscreen()" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg hover:scale-110 transition-all theme-border text-xs">📺</button>
+    <div id="lobby-ui" class="w-full max-w-md mt-20 animate__animated animate__fadeIn">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-[900] theme-text uppercase tracking-tighter">CineStream</h1>
+            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Streaming de Tela P2P</p>
         </div>
-        <div class="text-center mb-6">
-            <h1 class="text-4xl font-[900] theme-text uppercase tracking-tighter">CineSync P2P</h1>
-            <h2 class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Streaming Real-Time + P2P</h2>
-        </div>
-        <div id="lobby-box" class="w-full glass-panel p-6 rounded-[2rem] theme-shadow space-y-4">
+        
+        <div class="glass-panel p-6 rounded-3xl theme-shadow space-y-4">
             <div class="space-y-3">
-                <input type="text" id="nick" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="👤 Seu apelido">
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="room" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="🆔️ Sala">
-                    <input type="password" id="pass" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="🔑 Senha">
-                </div>
-                <input type="text" id="yt-link" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="🔗 Link do YouTube (Opcional)">
+                <input type="text" id="room" class="w-full bg-black/40 border border-white/10 rounded-xl p-4 focus:outline-none theme-border transition-all text-sm" placeholder="ID da Sala">
+                <input type="password" id="pass" class="w-full bg-black/40 border border-white/10 rounded-xl p-4 focus:outline-none theme-border transition-all text-sm" placeholder="Senha de Acesso">
             </div>
-            <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="start(true)" class="theme-bg text-white font-black py-4 rounded-xl active:scale-95 transition-all text-xs uppercase tracking-widest">Criar Sala</button>
-                <button onclick="start(false)" class="bg-transparent theme-text font-black py-4 rounded-xl active:scale-95 transition-all theme-border text-xs uppercase tracking-widest">Entrar</button>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="start(true)" class="theme-bg text-white font-black py-4 rounded-xl active:scale-95 transition-all text-xs uppercase">Transmitir</button>
+                <button onclick="start(false)" class="bg-white/5 text-white font-black py-4 rounded-xl active:scale-95 transition-all border border-white/10 text-xs uppercase">Assistir</button>
             </div>
-            <p id="statusMsg" class="text-center text-[10px] text-gray-500 uppercase font-bold tracking-widest"></p>
+            <p id="statusMsg" class="text-center text-[10px] text-gray-400 uppercase font-bold"></p>
         </div>
-        <footer class="text-center mt-5 text-gray-500 text-sm">
-            Made By: <a href="https://instagram.com/085_Teuzinnn" target="_blank" class="text-blue-400 hover:text-blue-300 font-semibold transition duration-200">@085_Teuzinnn</a>
-        </footer>
     </div>
 
     <main id="player-ui" class="hidden w-full max-w-5xl flex flex-col animate__animated animate__zoomIn">
-        <div id="host-header" class="w-full flex justify-between items-center mb-4 px-2">
-            <h1 class="text-xl font-black theme-text uppercase italic">CineSync</h1>
-            <div class="flex items-center gap-2">
-                <button id="btn-share" onclick="startScreenShare()" class="hidden px-3 py-1 bg-indigo-600 rounded-full text-[9px] font-black uppercase tracking-tighter">📺 Transmitir Tela</button>
-                <button onclick="openSettings()" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg theme-border text-[10px]">⚙️</button>
-                <div class="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/10">
-                    <div id="sync-indicator" class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span id="role-text" class="text-[9px] font-black uppercase tracking-widest">Sincronizado</span>
-                </div>
+        <div class="w-full flex justify-between items-center mb-4">
+            <h2 class="text-lg font-black theme-text uppercase italic">LIVE</h2>
+            <div class="flex gap-2">
+                <button id="btn-share" onclick="shareScreen()" class="hidden px-4 py-2 theme-bg text-white text-[10px] font-black rounded-lg uppercase">Compartilhar Tela</button>
+                <button onclick="location.reload()" class="px-4 py-2 bg-red-600/20 text-red-500 text-[10px] font-black rounded-lg uppercase border border-red-600/30">Sair</button>
             </div>
         </div>
 
-        <div class="video-wrapper glass-panel theme-shadow bg-black border border-white/5">
-            <div id="waitingOverlay" class="absolute inset-0 items-center justify-center flex-col gap-4 text-center p-6 rounded-[1.5rem]">
-                <div class="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
-                <p class="font-black text-white uppercase tracking-widest text-[10px]">Preparando Transmissão</p>
-                <div class="flex gap-2">
-                    <button onclick="$('#fileInput').click()" class="px-4 py-2 theme-bg rounded-xl text-[9px] font-black uppercase hover:scale-105 transition-all">Arquivo Local</button>
-                    <button id="btn-load-yt" onclick="loadYTFromInput()" class="px-4 py-2 bg-red-600 rounded-xl text-[9px] font-black uppercase hover:scale-105 transition-all hidden">Usar Link YT</button>
+        <div class="video-container glass-panel theme-border">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div id="loader" class="absolute inset-0 flex items-center justify-center bg-black/80 z-10 hidden">
+                <div class="flex flex-col items-center gap-3">
+                    <div class="w-8 h-8 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-cyan-500">Aguardando Transmissão...</p>
                 </div>
             </div>
-            <video id="mainVideo" controls class="hidden"></video>
-            <div id="ytPlayer" class="hidden"></div>
         </div>
-        <input type="file" id="fileInput" accept="video/*" class="hidden">
     </main>
-
-    <div id="modal" class="fixed inset-0 bg-black/95 hidden z-50 flex items-center justify-center p-6 animate__animated animate__fadeIn">
-        <div class="glass-panel w-full max-w-xs rounded-[2rem] p-6 space-y-5 theme-border">
-            <h3 class="font-black text-center theme-text tracking-widest text-[11px] uppercase">Configurações</h3>
-            <div class="grid grid-cols-5 gap-3 justify-items-center">
-                <button onclick="setTheme('#f97316')" class="w-9 h-9 rounded-xl bg-orange-500"></button>
-                <button onclick="setTheme('#22c55e')" class="w-9 h-9 rounded-xl bg-green-500"></button>
-                <button onclick="setTheme('#3b82f6')" class="w-9 h-9 rounded-xl bg-blue-500"></button>
-                <button onclick="setTheme('#ef4444')" class="w-9 h-9 rounded-xl bg-red-500"></button>
-                <button onclick="setTheme('#a855f7')" class="w-9 h-9 rounded-xl bg-purple-500"></button>
-            </div>
-            <button onclick="clearAllData()" class="w-full py-3 bg-red-900/10 text-red-500 border border-red-900/30 rounded-xl font-bold text-[9px] uppercase">Apagar Dados</button>
-            <button onclick="closeSettings()" class="w-full py-3 bg-white/5 rounded-xl text-[9px] font-black uppercase">Voltar</button>
-        </div>
-    </div>
 
     <script>
         const $ = document.querySelector.bind(document);
-        let peer = null, conn = null, isHost = false, hostReady = false, guestReady = false, roomKey = "";
-        let ytPlayer = null, currentMode = 'local', screenStream = null;
-        const video = $('#mainVideo');
+        let peer = null, conn = null, roomKey = "";
+        const video = $('#remoteVideo');
 
-        window.onload = () => {
-            $('#nick').value = localStorage.getItem('cs_nick') || '';
-            $('#room').value = localStorage.getItem('cs_room') || '';
-            $('#pass').value = localStorage.getItem('cs_pass') || '';
-            if(localStorage.getItem('cs_color')) setTheme(localStorage.getItem('cs_color'));
-        };
-
-        function start(hostMode) {
-            const nick = $('#nick').value.trim();
-            const r = $('#room').value.trim().toLowerCase().replace(/\s+/g, '-');
+        function start(isHost) {
+            const r = $('#room').value.trim().toLowerCase();
             roomKey = $('#pass').value.trim();
-            if (!nick || !r || !roomKey) return alert("Preencha todos os campos!");
-            
-            localStorage.setItem('cs_nick', nick);
-            localStorage.setItem('cs_room', r);
-            localStorage.setItem('cs_pass', roomKey);
-            
-            isHost = hostMode;
-            peer = new Peer(isHost ? `cs-vid-${r}` : undefined);
-            
-            peer.on('open', () => {
-                $('#statusMsg').innerText = isHost ? "Aguardando amigo..." : "Conectando...";
-                if (!isHost) connectToHost(`cs-vid-${r}`);
+            if (!r || !roomKey) return alert("Preencha Sala e Senha!");
+
+            $('#statusMsg').innerText = "Iniciando...";
+            peer = new Peer(isHost ? `cs-stream-${r}` : undefined, { debug: 1 });
+
+            peer.on('open', (id) => {
+                if (!isHost) {
+                    const hostId = `cs-stream-${r}`;
+                    const c = peer.connect(hostId);
+                    setupConn(c, false);
+                }
             });
-            peer.on('connection', setupConn);
+
+            peer.on('connection', (c) => setupConn(c, true));
             
             peer.on('call', (call) => {
                 call.answer();
-                call.on('stream', (remoteStream) => {
-                    currentMode = 'stream';
-                    $('#waitingOverlay').style.display = 'none';
-                    $('#ytPlayer').classList.add('hidden');
-                    $('#mainVideo').classList.remove('hidden');
-                    video.srcObject = remoteStream;
-                    video.play();
+                call.on('stream', (stream) => {
+                    $('#loader').classList.add('hidden');
+                    video.srcObject = stream;
                 });
             });
         }
 
-        function connectToHost(id) { setupConn(peer.connect(id)); }
-
-        function setupConn(c) {
+        function setupConn(c, isHost) {
             conn = c;
             conn.on('open', () => {
-                conn.send({ type: 'AUTH', val: CryptoJS.AES.encrypt('valid', roomKey).toString() });
+                conn.send({ type: 'AUTH', val: CryptoJS.AES.encrypt('ok', roomKey).toString() });
                 conn.on('data', (data) => {
                     if (data.type === 'AUTH') {
                         try {
                             const dec = CryptoJS.AES.decrypt(data.val, roomKey).toString(CryptoJS.enc.Utf8);
-                            if (dec !== 'valid') throw new Error();
-                            $('#lobby-ui').classList.add('hidden');
-                            $('#player-ui').classList.replace('hidden', 'flex');
-                            if (isHost) $('#btn-share').classList.remove('hidden');
-                            if ($('#yt-link').value) $('#btn-load-yt').classList.remove('hidden');
-                        } catch(e) { alert("Senha incorreta!"); location.reload(); }
+                            if (dec !== 'ok') throw new Error();
+                            showPlayer(isHost);
+                        } catch(e) { alert("Senha Incorreta!"); location.reload(); }
                     }
-                    if (data.type === 'YT_LOAD') initYouTube(data.id);
-                    handleSync(data);
                 });
             });
         }
 
-        async function startScreenShare() {
+        function showPlayer(isHost) {
+            $('#lobby-ui').classList.add('hidden');
+            $('#player-ui').classList.remove('hidden');
+            if (isHost) $('#btn-share').classList.remove('hidden');
+            else $('#loader').classList.remove('hidden');
+        }
+
+        async function shareScreen() {
             try {
-                screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-                currentMode = 'stream';
-                $('#waitingOverlay').style.display = 'none';
-                $('#ytPlayer').classList.add('hidden');
-                $('#mainVideo').classList.remove('hidden');
-                video.srcObject = screenStream;
-                video.play();
-                peer.call(conn.peer, screenStream);
-            } catch (err) { console.error(err); }
+                const stream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { frameRate: 60 }, 
+                    audio: true 
+                });
+                video.srcObject = stream;
+                peer.call(conn.peer, stream);
+                $('#btn-share').innerText = "Transmitindo...";
+                $('#btn-share').classList.replace('theme-bg', 'bg-green-600');
+            } catch (err) { console.error("Erro ao capturar tela:", err); }
         }
-
-        function initYouTube(vidId) {
-            currentMode = 'youtube';
-            $('#mainVideo').classList.add('hidden');
-            $('#ytPlayer').classList.remove('hidden');
-            ytPlayer = new YT.Player('ytPlayer', {
-                videoId: vidId,
-                playerVars: { 'autoplay': 0, 'controls': isHost ? 1 : 0, 'disablekb': isHost ? 0 : 1 },
-                events: { 'onReady': () => { if (isHost) hostReady = true; else guestReady = true; conn.send({type:'READY', val:true}); checkBothReady(); }}
-            });
-        }
-
-        function loadYTFromInput() {
-            const url = $('#yt-link').value;
-            const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-            if (id) {
-                initYouTube(id);
-                conn.send({ type: 'YT_LOAD', id: id });
-            }
-        }
-
-        function handleSync(data) {
-            if (currentMode === 'stream') return;
-            if (data.type === 'READY') { if (isHost) guestReady = data.val; else hostReady = data.val; checkBothReady(); }
-            if (data.type === 'SYNC') {
-                const curTime = currentMode === 'youtube' ? ytPlayer.getCurrentTime() : video.currentTime;
-                const diff = data.time - curTime;
-                if (currentMode === 'youtube') {
-                    if (data.paused) ytPlayer.pauseVideo(); else ytPlayer.playVideo();
-                    if (Math.abs(diff) > 2) ytPlayer.seekTo(data.time);
-                } else {
-                    if (data.paused && !video.paused) video.pause();
-                    if (!data.paused && video.paused) video.play();
-                    if (Math.abs(diff) > 3) video.currentTime = data.time;
-                    else if (diff > 0.1) video.playbackRate = 2.0;
-                    else if (diff < -0.1) video.playbackRate = 0.5;
-                    else video.playbackRate = 1.0;
-                }
-                $('#sync-indicator').className = Math.abs(diff) > 0.5 ? "w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" : "w-2.5 h-2.5 rounded-full bg-green-500";
-            }
-        }
-
-        function checkBothReady() { if (hostReady && guestReady) $('#waitingOverlay').style.display = 'none'; }
-
-        $('#fileInput').onchange = (e) => {
-            currentMode = 'local';
-            video.srcObject = null;
-            $('#ytPlayer').classList.add('hidden');
-            $('#mainVideo').classList.remove('hidden');
-            video.src = URL.createObjectURL(e.target.files[0]);
-            if (isHost) hostReady = true; else guestReady = true;
-            conn.send({ type: 'READY', val: true });
-            checkBothReady();
-        };
-
-        setInterval(() => {
-            if (conn && conn.open && hostReady && guestReady && currentMode !== 'stream') {
-                const t = currentMode === 'youtube' ? ytPlayer.getCurrentTime() : video.currentTime;
-                const p = currentMode === 'youtube' ? (ytPlayer.getPlayerState() !== 1) : video.paused;
-                conn.send({ type: 'SYNC', time: t, paused: p });
-            }
-        }, 200);
-
-        function setTheme(c) {
-            document.documentElement.style.setProperty('--main', c);
-            document.documentElement.style.setProperty('--glow', c + '66');
-            localStorage.setItem('cs_color', c);
-        }
-        function openSettings() { $('#modal').classList.remove('hidden'); }
-        function closeSettings() { $('#modal').classList.add('hidden'); }
-        function clearAllData() { localStorage.clear(); location.reload(); }
-        function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
     </script>
 </body>
 </html>
