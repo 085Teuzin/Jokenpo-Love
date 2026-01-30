@@ -3,219 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CineStream Pro - P2P</title>
+    <title>CineStream - Made By: @085_Teuzinnn</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --main: #06b6d4; --glow: rgba(6, 182, 212, 0.4); }
-        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; }
-        .theme-border { border: 1px solid var(--main) !important; }
-        .theme-text { color: var(--main) !important; }
-        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .video-container { width: 100%; aspect-ratio: 16/9; position: relative; border-radius: 1rem; overflow: hidden; background: #000; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        video { width: 100%; height: 100%; object-fit: contain; }
-        .badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .bg-gradient-brand {
+            background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+        }
+        .text-gradient-brand {
+            background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass-card {
+            background: rgba(23, 23, 23, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .video-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+        video {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 40px rgba(249, 115, 22, 0.15);
+        }
+        input:focus {
+            border-color: #f97316 !important;
+            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
     </style>
 </head>
-<body class="p-4 flex flex-col items-center justify-center">
+<body class="p-4">
 
-    <div id="lobby-ui" class="w-full max-w-md animate__animated animate__fadeIn">
+    <div id="lobby" class="w-full max-w-md animate__animated animate__fadeIn">
         <div class="text-center mb-8">
-            <h1 class="text-5xl font-black theme-text tracking-tighter italic">CINE<span class="text-white">STREAM</span></h1>
-            <div class="flex justify-center gap-2 mt-2">
-                <span class="badge bg-cyan-500/20 theme-text">V2.0 PRO</span>
-                <span class="badge bg-green-500/20 text-green-400">P2P Encrypted</span>
+            <h1 class="text-5xl font-extrabold tracking-tighter text-gradient-brand mb-2">CineStream</h1>
+            <h2 class="text-gray-400 text-sm font-medium uppercase tracking-widest">Host transmite PC, Guest assiste no Mobile</h2>
+        </div>
+
+        <div class="glass-card rounded-[2.5rem] p-8 space-y-5">
+            <div class="space-y-4">
+                <div class="relative">
+                    <input type="text" id="room" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm transition-all outline-none" placeholder="ID da Sala">
+                </div>
+                <div class="relative">
+                    <input type="password" id="pass" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm transition-all outline-none" placeholder="Senha de Acesso">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="connect(true)" class="bg-gradient-brand hover:opacity-90 text-white font-bold py-4 rounded-2xl transition-transform active:scale-95 shadow-lg shadow-orange-600/20">TRANSMITIR TELA</button>
+                <button onclick="connect(false)" class="bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-transform active:scale-95 border border-white/10">ASSISTIR AGORA</button>
+            </div>
+
+            <div id="status-area" class="text-center py-2 hidden">
+                <span class="status-dot bg-orange-500 animate-pulse"></span>
+                <span id="status-text" class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Conectando...</span>
             </div>
         </div>
-        
-        <div class="glass-panel p-8 rounded-[2rem] shadow-2xl space-y-4">
-            <div class="space-y-3">
-                <div class="relative">
-                    <input type="text" id="room" class="w-full bg-black/40 border border-white/10 rounded-xl p-4 focus:outline-none theme-border transition-all text-sm" placeholder="Nome da Sala (ex: amigos-da-facul)">
-                </div>
-                <input type="password" id="pass" class="w-full bg-black/40 border border-white/10 rounded-xl p-4 focus:outline-none theme-border transition-all text-sm" placeholder="Senha Secreta">
+
+        <footer class="text-center mt-5 text-gray-500 text-sm">
+            Made By: <a href="https://instagram.com/085_Teuzinnn" target="_blank" class="text-blue-400 hover:text-blue-300 font-semibold transition duration-200">@085_Teuzinnn</a>
+        </footer>
+    </div>
+
+    <div id="player-screen" class="hidden fixed inset-0 w-full h-full bg-black flex flex-col">
+        <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/80 to-transparent">
+            <div class="flex items-center gap-3">
+                <div class="bg-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse">LIVE</div>
+                <span id="room-display" class="font-bold text-sm tracking-tight">SALA</span>
             </div>
-            
-            <div class="grid grid-cols-2 gap-4 pt-2">
-                <button onclick="initApp(true)" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl active:scale-95 transition-all text-xs uppercase tracking-widest">Transmitir</button>
-                <button onclick="initApp(false)" class="bg-white/5 hover:bg-white/10 text-white font-black py-4 rounded-xl active:scale-95 transition-all border border-white/10 text-xs uppercase tracking-widest">Assistir</button>
+            <div class="flex gap-2">
+                <button id="btn-share" onclick="startCapture()" class="hidden px-4 py-2 bg-gradient-brand rounded-xl text-[10px] font-extrabold uppercase tracking-wider">Compartilhar Tela</button>
+                <button onclick="location.reload()" class="px-4 py-2 bg-white/10 rounded-xl text-[10px] font-extrabold uppercase tracking-wider">Sair</button>
             </div>
-            <p id="statusMsg" class="text-center text-[10px] text-gray-500 uppercase font-bold tracking-widest min-h-[15px]"></p>
+        </div>
+
+        <div class="video-container">
+            <video id="mainVideo" playsinline controls></video>
         </div>
     </div>
 
-    <main id="player-ui" class="hidden w-full max-w-5xl flex flex-col animate__animated animate__zoomIn">
-        <div class="w-full flex justify-between items-end mb-4 px-2">
-            <div>
-                <h2 id="display-room" class="text-2xl font-black text-white uppercase italic leading-none">SALA</h2>
-                <span id="peer-count" class="text-[10px] font-bold theme-text opacity-80 uppercase tracking-tighter">Conectando...</span>
-            </div>
-            <div class="flex gap-2">
-                <button id="btn-share" onclick="toggleScreenShare()" class="hidden px-5 py-2.5 bg-cyan-600 text-white text-[10px] font-black rounded-xl uppercase hover:bg-cyan-500 transition-all shadow-lg shadow-cyan-900/20">Iniciar Transmissão</button>
-                <button onclick="location.reload()" class="px-5 py-2.5 bg-red-600/10 text-red-500 text-[10px] font-black rounded-xl uppercase border border-red-600/20 hover:bg-red-600 hover:text-white transition-all">Sair</button>
-            </div>
-        </div>
-
-        <div class="video-container theme-border">
-            <video id="remoteVideo" autoplay playsinline></video>
-            
-            <div id="loader" class="absolute inset-0 flex items-center justify-center bg-slate-950/90 z-10 hidden">
-                <div class="text-center">
-                    <div class="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p id="loader-text" class="text-xs font-black uppercase tracking-[0.2em] theme-text">Aguardando Host iniciar o sinal...</p>
-                </div>
-            </div>
-
-            <div class="absolute bottom-4 right-4 flex gap-2">
-                <button onclick="toggleFullscreen()" class="p-3 bg-black/60 rounded-full border border-white/10 hover:bg-cyan-600 transition-all">
-                    <svg class="w-4 h-4" fill="white" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-                </button>
-            </div>
-        </div>
-    </main>
-
     <script>
         const $ = document.querySelector.bind(document);
-        let peer = null, connections = [], localStream = null, isHost = false, roomName = "";
+        let peer = null, conn = null, streamObj = null;
 
-        // Carregar última sala usada
-        window.onload = () => { if(localStorage.getItem('lastRoom')) $('#room').value = localStorage.getItem('lastRoom'); };
+        function updateStatus(msg) {
+            $('#status-area').classList.remove('hidden');
+            $('#status-text').innerText = msg;
+        }
 
-        async function initApp(hostMode) {
-            const r = $('#room').value.trim().replace(/\s+/g, '-').toLowerCase();
-            const pass = $('#pass').value.trim();
-            if (!r || !pass) return updateStatus("Erro: Preencha todos os campos", "text-red-400");
+        async function connect(isHost) {
+            const r = $('#room').value.trim().toLowerCase();
+            const p = $('#pass').value.trim();
+            if(!r || !p) return;
 
-            isHost = hostMode;
-            roomName = r;
-            localStorage.setItem('lastRoom', r);
-            const hostId = `cs-pro-${r}`;
-
-            updateStatus("Iniciando rede P2P...");
-
-            // Configuração com Servidores Google STUN (Gratuitos)
+            updateStatus("Criando Túnel P2P...");
+            const hostId = `cs-085-${r}`;
+            
             peer = new Peer(isHost ? hostId : undefined, {
-                config: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }, { 'urls': 'stun:stun1.l.google.com:19302' }] },
-                debug: 1
+                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]}
             });
 
             peer.on('open', (id) => {
-                if (!isHost) {
-                    const conn = peer.connect(hostId);
-                    handleConnection(conn);
+                if(!isHost) {
+                    const c = peer.connect(hostId);
+                    setupConnection(c, p, false);
                 }
-                showPlayer();
             });
 
-            peer.on('connection', (conn) => {
-                if (isHost) handleConnection(conn);
-            });
+            peer.on('connection', (c) => setupConnection(c, p, true));
 
             peer.on('call', (call) => {
                 call.answer();
-                call.on('stream', (stream) => {
-                    $('#loader').classList.add('hidden');
-                    $('#remoteVideo').srcObject = stream;
+                call.on('stream', (s) => {
+                    const v = $('#mainVideo');
+                    v.srcObject = s;
+                    v.play();
                 });
             });
 
-            peer.on('error', (err) => {
-                if(err.type === 'id-taken-anywhere') updateStatus("Erro: Esta sala já possui um Transmissor ativo.", "text-red-400");
-                else updateStatus("Erro de conexão: " + err.type, "text-red-400");
+            peer.on('error', () => {
+                alert("Erro na conexão. Verifique o ID da sala.");
+                location.reload();
             });
         }
 
-        function handleConnection(conn) {
+        function setupConnection(c, pass, isHost) {
+            conn = c;
             conn.on('open', () => {
-                // Handshake de Segurança
-                const authData = CryptoJS.AES.encrypt('cinestream-auth', $('#pass').value).toString();
-                conn.send({ type: 'AUTH', val: authData });
+                const auth = CryptoJS.AES.encrypt('auth-ok', pass).toString();
+                conn.send({ type: 'AUTH', val: auth });
 
                 conn.on('data', (data) => {
-                    if (data.type === 'AUTH') {
+                    if(data.type === 'AUTH') {
                         try {
-                            const dec = CryptoJS.AES.decrypt(data.val, $('#pass').value).toString(CryptoJS.enc.Utf8);
-                            if (dec !== 'cinestream-auth') throw "fail";
-                            
-                            connections.push(conn);
-                            updatePeerCount();
-                            
-                            // Se o host já estiver transmitindo, liga para o novo espectador
-                            if (isHost && localStream) peer.call(conn.peer, localStream);
-                        } catch(e) { 
-                            updateStatus("Senha incorreta!"); 
-                            setTimeout(() => location.reload(), 2000); 
+                            const dec = CryptoJS.AES.decrypt(data.val, pass).toString(CryptoJS.enc.Utf8);
+                            if(dec !== 'auth-ok') throw 'err';
+                            initUI(isHost);
+                        } catch(e) {
+                            alert("Senha Incorreta!");
+                            location.reload();
                         }
                     }
                 });
-
-                conn.on('close', () => {
-                    connections = connections.filter(c => c.peer !== conn.peer);
-                    updatePeerCount();
-                });
             });
         }
 
-        async function toggleScreenShare() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-                $('#btn-share').innerText = "Iniciar Transmissão";
-                $('#btn-share').classList.replace('bg-green-600', 'bg-cyan-600');
-                return;
-            }
+        function initUI(isHost) {
+            $('#lobby').classList.add('hidden');
+            $('#player-screen').classList.remove('hidden');
+            $('#room-display').innerText = $('#room').value.toUpperCase();
+            if(isHost) $('#btn-share').classList.remove('hidden');
+        }
 
+        async function startCapture() {
             try {
-                localStream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { cursor: "always", frameRate: { ideal: 30, max: 60 } }, 
-                    audio: { echoCancellation: true, noiseSuppression: true } 
+                streamObj = await navigator.mediaDevices.getDisplayMedia({
+                    video: { frameRate: { ideal: 60, max: 60 }, cursor: "always" },
+                    audio: { echoCancellation: true, noiseSuppression: true }
                 });
                 
-                $('#remoteVideo').srcObject = localStream;
-                $('#btn-share').innerText = "Parar Transmissão";
-                $('#btn-share').classList.replace('bg-cyan-600', 'bg-green-600');
+                const video = $('#mainVideo');
+                video.srcObject = streamObj;
+                video.muted = true;
+                
+                peer.call(conn.peer, streamObj);
+                
+                $('#btn-share').innerText = "Transmitindo...";
+                $('#btn-share').classList.replace('bg-gradient-brand', 'bg-green-600');
 
-                // Ligar para todos os conectados
-                connections.forEach(conn => peer.call(conn.peer, localStream));
-
-                // Se o usuário parar de compartilhar pelo botão do navegador
-                localStream.getVideoTracks()[0].onended = () => toggleScreenShare();
-
+                streamObj.getVideoTracks()[0].onended = () => location.reload();
             } catch (err) {
                 console.error(err);
-                updateStatus("Erro ao acessar tela");
             }
-        }
-
-        function showPlayer() {
-            $('#lobby-ui').classList.add('hidden');
-            $('#player-ui').classList.remove('hidden');
-            $('#display-room').innerText = roomName;
-            if (isHost) {
-                $('#btn-share').classList.remove('hidden');
-                updatePeerCount();
-            } else {
-                $('#loader').classList.remove('hidden');
-                $('#peer-count').innerText = "Conectado ao Host - Aguardando Vídeo";
-            }
-        }
-
-        function updateStatus(msg, colorClass = "text-gray-500") {
-            const el = $('#statusMsg');
-            el.innerText = msg;
-            el.className = `text-center text-[10px] uppercase font-bold tracking-widest ${colorClass}`;
-        }
-
-        function updatePeerCount() {
-            if(isHost) $('#peer-count').innerText = `${connections.length} Espectador(es) Conectado(s)`;
-        }
-
-        function toggleFullscreen() {
-            const container = $('.video-container');
-            if (!document.fullscreenElement) container.requestFullscreen();
-            else document.exitFullscreen();
         }
     </script>
 </body>
